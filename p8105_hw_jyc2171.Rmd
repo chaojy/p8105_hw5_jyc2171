@@ -181,6 +181,20 @@ read_all_csvs = function(x) {
   
 }
 
+path_df =
+  tibble(
+    path = list.files("lda_data"),
+  ) %>% 
+  mutate(
+    path = str_c("lda_data/", path)
+  )
+
+path_df =
+path_df %>% 
+  mutate(
+    data = map(path, read_all_csvs)
+  )
+
 #Next, my for loop
 output = vector("list", length = 20)
 
@@ -190,24 +204,13 @@ for (i in 1:20) {
 
 }
 
-path_df =
-  tibble(
-    path = list.files("lda_data"),
-  ) %>% 
-  mutate(
-    path = str_c("lda_data/", path)
-  ) %>% 
-  mutate(
-    data = map(path_df$path, read_all_csvs)
-  )
-
 study_data =
   path_df %>% 
   separate(path, into = c("prefix", "arm_id"), sep = 9) %>% 
   select(-prefix) %>% 
   separate(arm_id, into = c("arm_id", "csv"), sep = 6) %>%
   select(-csv) %>%
-  unnest(data) %>% 
+  unnest(data) %>%
   mutate(
     week_1 = data$week_1,
     week_2 = data$week_2,
@@ -222,7 +225,7 @@ study_data =
   pivot_longer(
     week_1:week_8,
     names_to = "week",
-    values_to = "observations"
+    values_to = "repeated_measure"
   )
   
 #read_csv(path_df$path[[1]])
@@ -233,23 +236,136 @@ study_data =
 
 ```{r}
 #Spaghetti plot
+study_data %>% 
+  ggplot(aes(x = week, y = repeated_measure)) +
+  geom_point(aes(color = arm_id)) +
+  geom_line(aes(group = arm_id, color = arm_id))
 ```
 
+The spaghetti plot shows that in general, subjects in the experimental arm (denoted by warm colors) generally have higher values of the repeated measure compared to subjects in the control arm.  In addition, the values of the repeated measure trends upwards over time (that is, the value of the repeated measure increased weekly).
 
 # Problem 3 
 
-```{r}
+```{r, echo = FALSE}
+##Pleaes ignore these lecture notes written down from synchronous class session
 #This is a problem about simulations
 #given: sample size = 30
 #given: sd = 5
 #change: means.  means of 1, 2, 3, 4, 5, 6
 #for each mean, generate 5000 datasets
 #not exporting means, sds
-#export the results of the hypothesis test, whehter the mean is equal to zero.
+#export the results of the hypothesis test, whether the mean is equal to zero.
 #when mean = 0, reject or fail to reject the null hypthesis a certain percentage of times - see what happens as you move from the means.
 #make two plots - estimated plot when true mean = zero
 #and then filter, show only when p values<0.05 and then compute the mean, what would that mean look like.
 # you are always testing that mean = 0
+
+```
+
+```{r}
+#First, I will create the function using the specified given data:
+
+sim_power = function(samp_size = 30, mu = 0, sigma = 5) {
+  
+  sim_data =
+    tibble(
+      x = rnorm(n = samp_size, mean = mu, sd = sigma)
+  )
+
+  sim_data %>% 
+    t.test() %>% 
+    broom::tidy()
+  
+}
+
+
+```
+
+```{r}
+output = vector("list", length = 5000)
+
+for (i in 1:5000) {
+  
+  output[[i]] = sim_power(mu = 0)
+
+}
+
+bind_rows(output)
+```
+
+```{r}
+n_list =
+  list(
+    "mu = 0" = 0,
+    "mu = 1" = 1,
+    "mu = 2" = 2,
+    "mu = 3" = 3,
+    "mu = 4" = 4,
+    "mu = 5" = 5,
+    "mu = 6" = 6
+  )
+
+for (i in 1:6) {
+  
+  output[[i]] =
+    rerun(100, sim_power(mu = n_list[[i]])) %>% 
+    bind_rows()
+  
+}
+
+sim_results = 
+  tibble(
+    mu = c(0, 1, 2, 3, 4, 5, 6)
+  ) %>% 
+    mutate(
+      output_lists = map(.x = mu, ~ rerun(5, sim_power(.x)))
+      
+    )  
+      ,
+      estimate_df = map(output_lists, bind_rows)
+    ) %>% 
+    select(-output_lists) %>% 
+    unnest(estimate_df)
+```
+
+
+```{r}
+# first, I will only do the simulation with a small number of cycles, 5.  I will increase to 5000 later, after I have figured out the code
+sim_power_0 = 
+  rerun(5, sim_power(mu = 0)) %>% 
+  bind_rows() %>% 
+  select(estimate, p.value)
+
+sim_power_1 =
+  rerun(5, sim_power(mu = 1)) %>% 
+  bind_rows() %>% 
+  select(estimate, p.value)
+
+sim_power_2 =
+  rerun(5, sim_power(mu = 2)) %>% 
+  bind_rows() %>% 
+  select(estimate, p.value)
+
+sim_power_3 =
+  rerun(5, sim_power(mu = 3)) %>% 
+  bind_rows() %>% 
+  select(estimate, p.value)
+
+sim_power_4 =
+  rerun(5, sim_power(mu = 4)) %>% 
+  bind_rows() %>% 
+  select(estimate, p.value)
+
+sim_power_5 =
+  rerun(5, sim_power(mu = 5)) %>% 
+  bind_rows() %>% 
+  select(estimate, p.value)
+
+sim_power_6 =
+  rerun(5, sim_power(mu = 6)) %>% 
+  bind_rows() %>% 
+  select(estimate, p.value)
+
 
 ```
 
