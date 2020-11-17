@@ -171,66 +171,97 @@ start with a dataframe with the names of all of your names
 ##list.files("lda_data")
 
 #First, my function to read in all 20 .csv files
-read_all_csvs = function(x) {
-  
-  data = read_csv(x)
- 
+
+########################
+# read_all_csvs = function(x) {
+#   
+#   data = read_csv(x)
+#  
+#   tibble(
+#     data = data
+#   )
+#   
+# }
+# 
+# path_df =
+#   tibble(
+#     files = list.files("lda_data"),
+#     path = str_c("lda_data/", files)
+#   ) %>% 
+#   mutate(
+#     data = map(path, read_all_csvs, col_types = "dddddddd")
+#   ) %>% 
+#   unnest()
+#   
+# path_df =
+# path_df %>% 
+#   mutate(
+#     data = map(path, read_all_csvs, col_types = "dddddddd")
+#   ) %>% 
+#   unnest()
+#################################
+
+
+#####
+study_data = 
   tibble(
-    data = data
-  )
-  
-}
-
-path_df =
-  tibble(
-    path = list.files("lda_data"),
+    files = list.files("lda_data"),
+    path = str_c("lda_data/", files)
   ) %>% 
-  mutate(
-    path = str_c("lda_data/", path)
-  )
-
-path_df =
-path_df %>% 
-  mutate(
-    data = map(path, read_all_csvs)
-  )
-
-#Next, my for loop
-output = vector("list", length = 20)
-
-for (i in 1:20) {
-  
-  output[[i]] = read_all_csvs(path_df$path[[i]])
-
-}
-
-study_data =
-  path_df %>% 
-  separate(path, into = c("prefix", "arm_id"), sep = 9) %>% 
-  select(-prefix) %>% 
-  separate(arm_id, into = c("arm_id", "csv"), sep = 6) %>%
-  select(-csv) %>%
-  unnest(data) %>%
-  mutate(
-    week_1 = data$week_1,
-    week_2 = data$week_2,
-    week_3 = data$week_3,
-    week_4 = data$week_4,
-    week_5 = data$week_5,
-    week_6 = data$week_6,
-    week_7 = data$week_7,
-    week_8 = data$week_8,
-  ) %>% 
-  select(arm_id, week_1:week_8) %>% 
+  mutate(data = map(path, read_csv, col_types = "dddddddd")) %>% 
+  unnest() %>% 
   pivot_longer(
     week_1:week_8,
     names_to = "week",
     values_to = "repeated_measure"
-  )
-  
-#read_csv(path_df$path[[1]])
-#read_csv(path_df$path[[2]])
+  ) %>% 
+  select(-path) %>% 
+  rename(
+    arm_id = files
+  ) %>%
+  separate(arm_id, into = c("arm_id", ".csv"), sep = 6) %>% 
+  select(-.csv)
+######
 
+# #Next, my for loop
+# output = vector("list", length = 20)
+# 
+# for (i in 1:20) {
+#   
+#   output[[i]] = read_all_csvs(path_df$path[[i]])
+# 
+# }
+# 
+# study_data =
+#   path_df %>% 
+#   separate(path, into = c("prefix", "arm_id"), sep = 9) %>% 
+#   select(-prefix) %>% 
+#   separate(arm_id, into = c("arm_id", "csv"), sep = 6) %>%
+#   select(-csv) %>%
+#   unnest(data) %>%
+#   mutate(
+#     week_1 = data$week_1,
+#     week_2 = data$week_2,
+#     week_3 = data$week_3,
+#     week_4 = data$week_4,
+#     week_5 = data$week_5,
+#     week_6 = data$week_6,
+#     week_7 = data$week_7,
+#     week_8 = data$week_8,
+#   ) %>%   
+#   select(arm_id, week_1:week_8) %>% 
+#   pivot_longer(
+#     data$week_1:data$week_8,
+#     names_to = "week",
+#     values_to = "repeated_measure"
+#   )
+#   
+#   
+#   
+#   
+# #read_csv(path_df$path[[1]])
+# #read_csv(path_df$path[[2]])
+# 
 
 ```
 
@@ -265,107 +296,148 @@ The spaghetti plot shows that in general, subjects in the experimental arm (deno
 ```{r}
 #First, I will create the function using the specified given data:
 
-sim_power = function(samp_size = 30, mu = 0, sigma = 5) {
+t_test = function(samp_size = 30, mu = 0, sigma = 5) {
   
   sim_data =
     tibble(
       x = rnorm(n = samp_size, mean = mu, sd = sigma)
-  )
+    )
 
-  sim_data %>% 
-    t.test() %>% 
-    broom::tidy()
+  test = t.test(x ~ 1, data = sim_data)
+  
+  broom::tidy(test)
   
 }
 
+#########
+# sim_t_test = function(n_samp = 30, mu = 2, sigma = 5) {
+# 
+#    sim_data = tibble(
+#      x = rnorm(n_samp, mean = mu, sd = sigma)
+#    )
+# 
+#    test = t.test(x ~ 1, data = sim_data)
+# 
+#    broom::tidy(test)
+# 
+#  }
+# 
+#  sim_results =
+#    tibble(mu = 0:6) %>%
+#    mutate(
+#      output_lists = map(.x = mu, ~rerun(100, sim_t_test(mu = .x))),
+#      estimate_dfs = map(output_lists, bind_rows)
+#    ) %>%
+#    select(-output_lists)
 
+####
+##for loop approach
+# plot_data = c()
+# for (i in 0:6) {
+#   plot_data[[i+1]] =
+#     tibble(mu = i) %>%
+#     mutate(raw = map(.x = mu, ~ rerun(5000, rnorm(30, .x, 5)))) %>%
+#     unnest(raw) %>%
+#     mutate(
+#       t_test = map(.x = raw, ~ t.test(.x, mu =0, sd = 5)),
+#       t_test = map(t_test, broom::tidy)
+#     ) %>%
+#     unnest(t_test) %>%
+#     mutate(t_accept_h0 = p.value > 0.05)
+# }
+# plot_data = plot_data %>% bind_rows()
+###
 ```
 
-```{r}
-output = vector("list", length = 5000)
-
-for (i in 1:5000) {
-  
-  output[[i]] = sim_power(mu = 0)
-
-}
-
-bind_rows(output)
-```
 
 ```{r}
-n_list =
-  list(
-    "mu = 0" = 0,
-    "mu = 1" = 1,
-    "mu = 2" = 2,
-    "mu = 3" = 3,
-    "mu = 4" = 4,
-    "mu = 5" = 5,
-    "mu = 6" = 6
-  )
+#first doing 100 simulations, will expand to 5000 later after I get the code correct
 
-for (i in 1:6) {
-  
-  output[[i]] =
-    rerun(100, sim_power(mu = n_list[[i]])) %>% 
-    bind_rows()
-  
-}
+
 
 sim_results = 
-  tibble(
-    mu = c(0, 1, 2, 3, 4, 5, 6)
+  tibble(mu = 0:6) %>% 
+  mutate(
+    output_lists = map(.x = mu, ~rerun(100, t_test(mu = .x))),
+    estimate_dfs = map(output_lists, bind_rows)
   ) %>% 
-    mutate(
-      output_lists = map(.x = mu, ~ rerun(5, sim_power(.x)))
-      
-    )  
-      ,
-      estimate_df = map(output_lists, bind_rows)
-    ) %>% 
-    select(-output_lists) %>% 
-    unnest(estimate_df)
+  select(-output_lists) %>% 
+  unnest(estimate_dfs) %>% 
+  select(mu, estimate, p.value)
+
+
+# n_list =
+#   list(
+#     "mu = 0" = 1,
+#     "mu = 1" = 2,
+#     "mu = 2" = 3,
+#     "mu = 3" = 4,
+#     "mu = 4" = 5,
+#     "mu = 5" = 6,
+#     "mu = 6" = 7
+#   )
+
+# output = vector("list", length = 7)
+# 
+# for (i in 1:7) {
+#   
+#   output[[i]] = rerun(10, t_test(mu = n_list[[i]])) %>% 
+#     bind_rows()
+#   
+# }
+
+# sim_results = 
+#   tibble(
+#     mu = c(1, 2, 3, 4, 5, 6, 7)
+#   ) %>% 
+#   mutate(
+#     output_lists = map(.x = mu, ~ rerun(30, t_test(.x)))  ),
+#     estimates_p_val = map(output_lists, bind_rows)
+#   )  
+#       
+#       estimate_df = map(output_lists, bind_rows)
+#     ) %>% 
+#     select(-output_lists) %>% 
 ```
 
 
 ```{r}
 # first, I will only do the simulation with a small number of cycles, 5.  I will increase to 5000 later, after I have figured out the code
-sim_power_0 = 
-  rerun(5, sim_power(mu = 0)) %>% 
-  bind_rows() %>% 
-  select(estimate, p.value)
-
-sim_power_1 =
-  rerun(5, sim_power(mu = 1)) %>% 
-  bind_rows() %>% 
-  select(estimate, p.value)
-
-sim_power_2 =
-  rerun(5, sim_power(mu = 2)) %>% 
-  bind_rows() %>% 
-  select(estimate, p.value)
-
-sim_power_3 =
-  rerun(5, sim_power(mu = 3)) %>% 
-  bind_rows() %>% 
-  select(estimate, p.value)
-
-sim_power_4 =
-  rerun(5, sim_power(mu = 4)) %>% 
-  bind_rows() %>% 
-  select(estimate, p.value)
-
-sim_power_5 =
-  rerun(5, sim_power(mu = 5)) %>% 
-  bind_rows() %>% 
-  select(estimate, p.value)
-
-sim_power_6 =
-  rerun(5, sim_power(mu = 6)) %>% 
-  bind_rows() %>% 
-  select(estimate, p.value)
-
+# sim_power_0 = 
+#   rerun(5, sim_power(mu = 0)) %>% 
+#   bind_rows() %>% 
+#   select(estimate, p.value)
+# 
+# sim_power_1 =
+#   rerun(5, sim_power(mu = 1)) %>% 
+#   bind_rows() %>% 
+#   select(estimate, p.value)
+# 
+# sim_power_2 =
+#   rerun(5, sim_power(mu = 2)) %>% 
+#   bind_rows() %>% 
+#   select(estimate, p.value)
+# 
+# sim_power_3 =
+#   rerun(5, sim_power(mu = 3)) %>% 
+#   bind_rows() %>% 
+#   select(estimate, p.value)
+# 
+# sim_power_4 =
+#   rerun(5, sim_power(mu = 4)) %>% 
+#   bind_rows() %>% 
+#   select(estimate, p.value)
+# 
+# sim_power_5 =
+#   rerun(5, sim_power(mu = 5)) %>% 
+#   bind_rows() %>% 
+#   select(estimate, p.value)
+# 
+# sim_power_6 =
+#   rerun(5, sim_power(mu = 6)) %>% 
+#   bind_rows() %>% 
+#   select(estimate, p.value)
+# 
 
 ```
 
