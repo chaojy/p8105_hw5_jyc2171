@@ -155,54 +155,22 @@ import one dataset
 data_1 = read_csv("lda_data/con_01.csv")
 ```
 
-but the challenge is how to do it across the 10 subjects in the contorl group and 10 subjects in control group?
+but the challenge is how to do it across the 10 subjects in the experimental group and 10 subjects in control group?
 
 start with a dataframe with the names of all of your names
 
 ```{r}
+#Live session lecture notes - please ignore
 ## if you can do this, then you would solve this part of the homework assignment
 ## then after this, you can do some mutate stuff
 ## probably need to pivot to made the dataset tidy
 ## could I get the actual dataframe I wanted to have to do some analysis or some plots
 ## this is a data organizational problem and data tidying problem
 ## in the end, everything will be in one dataframe
-list.files()
-list.files("lda_data")
+##list.files()
+##list.files("lda_data")
 
-path_df =
-  tibble(
-    path = list.files("lda_data"),
-  ) %>% 
-  mutate(
-    path = str_c("lda_data/", path),
-    data = map(path_df$path, read_all_csvs)
-  )
-
-study_data =
-  path_df %>% 
-  separate(path, into = c("prefix", "arm_id"), sep = 9) %>% 
-  select(-prefix) %>% 
-  separate(arm_id, into = c("arm_id", "csv"), sep = 6) %>%
-  select(-csv) %>%
-  unnest(data) %>%
-  pivot_longer(
-    data$week_1:data$week_8,
-    names_to = "week",
-    names_prefix = "data$",
-    values_to = "data"
-  )
-  
-  
-
-
-#read_csv(path_df$path[[1]])
-#read_csv(path_df$path[[2]])
-
-## now how to do this read csv across all 20 paths?
-## can have each of the csv's stored
-```
-
-```{r}
+#First, my function to read in all 20 .csv files
 read_all_csvs = function(x) {
   
   data = read_csv(x)
@@ -212,9 +180,8 @@ read_all_csvs = function(x) {
   )
   
 }
-```
 
-```{r}
+#Next, my for loop
 output = vector("list", length = 20)
 
 for (i in 1:20) {
@@ -222,8 +189,51 @@ for (i in 1:20) {
   output[[i]] = read_all_csvs(path_df$path[[i]])
 
 }
+
+path_df =
+  tibble(
+    path = list.files("lda_data"),
+  ) %>% 
+  mutate(
+    path = str_c("lda_data/", path)
+  ) %>% 
+  mutate(
+    data = map(path_df$path, read_all_csvs)
+  )
+
+study_data =
+  path_df %>% 
+  separate(path, into = c("prefix", "arm_id"), sep = 9) %>% 
+  select(-prefix) %>% 
+  separate(arm_id, into = c("arm_id", "csv"), sep = 6) %>%
+  select(-csv) %>%
+  unnest(data) %>% 
+  mutate(
+    week_1 = data$week_1,
+    week_2 = data$week_2,
+    week_3 = data$week_3,
+    week_4 = data$week_4,
+    week_5 = data$week_5,
+    week_6 = data$week_6,
+    week_7 = data$week_7,
+    week_8 = data$week_8,
+  ) %>% 
+  select(arm_id, week_1:week_8) %>% 
+  pivot_longer(
+    week_1:week_8,
+    names_to = "week",
+    values_to = "observations"
+  )
+  
+#read_csv(path_df$path[[1]])
+#read_csv(path_df$path[[2]])
+
+
 ```
 
+```{r}
+#Spaghetti plot
+```
 
 
 # Problem 3 
