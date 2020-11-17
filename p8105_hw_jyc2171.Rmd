@@ -43,8 +43,6 @@ homicide_df =
   ) %>%
   select(city_state, resolved) %>% 
   filter(city_state != "Tulsa_AL")
-  
-
 ```
 
 
@@ -115,10 +113,7 @@ results_df %>%
   geom_point() +
   geom_errorbar(aes(ymin = conf.low, ymax = conf.high)) +
   theme(legend.position = "bottom", axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
-
-
 ```
-
 
 
 ```{r, error = TRUE}
@@ -147,20 +142,16 @@ homicide_df =
   nest(data = resolved)
 ```
 
-## Problem 2 ideas ...
+## Problem 2
 
-import one dataset
+```{r, echo = FALSE}
+#Live session lecture notes and exploratroy code - please ignore
 
-```{r}
-data_1 = read_csv("lda_data/con_01.csv")
-```
+#import one dataset
+#data_1 = read_csv("lda_data/con_01.csv")
+#but the challenge is how to do it across the 10 subjects in the experimental group and 10 subjects in control group?
+#start with a dataframe with the names of all of your names
 
-but the challenge is how to do it across the 10 subjects in the experimental group and 10 subjects in control group?
-
-start with a dataframe with the names of all of your names
-
-```{r}
-#Live session lecture notes - please ignore
 ## if you can do this, then you would solve this part of the homework assignment
 ## then after this, you can do some mutate stuff
 ## probably need to pivot to made the dataset tidy
@@ -200,27 +191,6 @@ start with a dataframe with the names of all of your names
 #   ) %>% 
 #   unnest()
 #################################
-
-
-#####
-study_data = 
-  tibble(
-    files = list.files("lda_data"),
-    path = str_c("lda_data/", files)
-  ) %>% 
-  mutate(data = map(path, read_csv, col_types = "dddddddd")) %>% 
-  unnest() %>% 
-  pivot_longer(
-    week_1:week_8,
-    names_to = "week",
-    values_to = "repeated_measure"
-  ) %>% 
-  select(-path) %>% 
-  rename(
-    arm_id = files
-  ) %>%
-  separate(arm_id, into = c("arm_id", ".csv"), sep = 6) %>% 
-  select(-.csv)
 ######
 
 # #Next, my for loop
@@ -266,6 +236,27 @@ study_data =
 ```
 
 ```{r}
+study_data = 
+  tibble(
+    files = list.files("lda_data"),
+    path = str_c("lda_data/", files)
+  ) %>% 
+  mutate(data = map(path, read_csv, col_types = "dddddddd")) %>% 
+  unnest() %>% 
+  pivot_longer(
+    week_1:week_8,
+    names_to = "week",
+    values_to = "repeated_measure"
+  ) %>% 
+  select(-path) %>% 
+  rename(
+    arm_id = files
+  ) %>%
+  separate(arm_id, into = c("arm_id", ".csv"), sep = 6) %>% 
+  select(-.csv)
+```
+
+```{r}
 #Spaghetti plot
 study_data %>% 
   ggplot(aes(x = week, y = repeated_measure)) +
@@ -273,12 +264,12 @@ study_data %>%
   geom_line(aes(group = arm_id, color = arm_id))
 ```
 
-The spaghetti plot shows that in general, subjects in the experimental arm (denoted by warm colors) generally have higher values of the repeated measure compared to subjects in the control arm.  In addition, the values of the repeated measure trends upwards over time (that is, the value of the repeated measure increased weekly).
+The spaghetti plot shows that in general, subjects in the experimental arm (denoted by warm colors) generally have higher values of the repeated measure compared to subjects in the control arm.  In addition, the values of the repeated measure trends upwards over time in the experimental arm (that is, the value of the repeated measure increases weekly), more so than in the control arm.
 
 # Problem 3 
 
 ```{r, echo = FALSE}
-##Pleaes ignore these lecture notes written down from synchronous class session
+##Pleaes ignore these lecture notes written down from synchronous class session, and exploratory code
 #This is a problem about simulations
 #given: sample size = 30
 #given: sd = 5
@@ -290,7 +281,42 @@ The spaghetti plot shows that in general, subjects in the experimental arm (deno
 #make two plots - estimated plot when true mean = zero
 #and then filter, show only when p values<0.05 and then compute the mean, what would that mean look like.
 # you are always testing that mean = 0
-
+# first, I will only do the simulation with a small number of cycles, 5.  I will increase to 5000 later, after I have figured out the code
+# sim_power_0 = 
+#   rerun(5, sim_power(mu = 0)) %>% 
+#   bind_rows() %>% 
+#   select(estimate, p.value)
+# 
+# sim_power_1 =
+#   rerun(5, sim_power(mu = 1)) %>% 
+#   bind_rows() %>% 
+#   select(estimate, p.value)
+# 
+# sim_power_2 =
+#   rerun(5, sim_power(mu = 2)) %>% 
+#   bind_rows() %>% 
+#   select(estimate, p.value)
+# 
+# sim_power_3 =
+#   rerun(5, sim_power(mu = 3)) %>% 
+#   bind_rows() %>% 
+#   select(estimate, p.value)
+# 
+# sim_power_4 =
+#   rerun(5, sim_power(mu = 4)) %>% 
+#   bind_rows() %>% 
+#   select(estimate, p.value)
+# 
+# sim_power_5 =
+#   rerun(5, sim_power(mu = 5)) %>% 
+#   bind_rows() %>% 
+#   select(estimate, p.value)
+# 
+# sim_power_6 =
+#   rerun(5, sim_power(mu = 6)) %>% 
+#   bind_rows() %>% 
+#   select(estimate, p.value)
+# 
 ```
 
 ```{r}
@@ -309,29 +335,8 @@ t_test = function(samp_size = 30, mu = 0, sigma = 5) {
   
 }
 
-#########
-# sim_t_test = function(n_samp = 30, mu = 2, sigma = 5) {
-# 
-#    sim_data = tibble(
-#      x = rnorm(n_samp, mean = mu, sd = sigma)
-#    )
-# 
-#    test = t.test(x ~ 1, data = sim_data)
-# 
-#    broom::tidy(test)
-# 
-#  }
-# 
-#  sim_results =
-#    tibble(mu = 0:6) %>%
-#    mutate(
-#      output_lists = map(.x = mu, ~rerun(100, sim_t_test(mu = .x))),
-#      estimate_dfs = map(output_lists, bind_rows)
-#    ) %>%
-#    select(-output_lists)
-
 ####
-##for loop approach
+##for loop approach?
 # plot_data = c()
 # for (i in 0:6) {
 #   plot_data[[i+1]] =
@@ -346,14 +351,12 @@ t_test = function(samp_size = 30, mu = 0, sigma = 5) {
 #     mutate(t_accept_h0 = p.value > 0.05)
 # }
 # plot_data = plot_data %>% bind_rows()
-###
+####
 ```
 
 
 ```{r}
 #first doing 100 simulations, will expand to 5000 later after I get the code correct
-
-
 
 sim_results = 
   tibble(mu = 0:6) %>% 
@@ -441,7 +444,6 @@ prop_sig %>%
 #Plot of estimates on y axis and true value of mu on x axis
 sim_results %>% 
   ggplot(aes(x = mu, y = estimate, group = mu, color = mu)) +
-  geom_point(alpha = 0.4) +
   geom_boxplot()
 
 #Plot of estimates on y axis for statistically significant p values and mu on x axis
@@ -450,50 +452,12 @@ significance_df %>%
     stat_sig == "significant"
   ) %>% 
   ggplot(aes(x = mu,  y = estimate, group = mu, color = mu)) +
-  geom_point(alpha = 0.2) +
   geom_boxplot()
-
 ```
 
+As mu (or the effect size) increases, the proportion of statistically significant p values < 0.05, and by convention, the proportion of times the null hypothesis is rejected (the power of the test) increases, approaching near 100% at a mu of 4.
 
+When including all values of estimated mu's (aka mu "hat") without accounting for statistical significance, estimates of mu from a sample of 5000 are approximately equal to the true value of mu.
 
-```{r}
-# first, I will only do the simulation with a small number of cycles, 5.  I will increase to 5000 later, after I have figured out the code
-# sim_power_0 = 
-#   rerun(5, sim_power(mu = 0)) %>% 
-#   bind_rows() %>% 
-#   select(estimate, p.value)
-# 
-# sim_power_1 =
-#   rerun(5, sim_power(mu = 1)) %>% 
-#   bind_rows() %>% 
-#   select(estimate, p.value)
-# 
-# sim_power_2 =
-#   rerun(5, sim_power(mu = 2)) %>% 
-#   bind_rows() %>% 
-#   select(estimate, p.value)
-# 
-# sim_power_3 =
-#   rerun(5, sim_power(mu = 3)) %>% 
-#   bind_rows() %>% 
-#   select(estimate, p.value)
-# 
-# sim_power_4 =
-#   rerun(5, sim_power(mu = 4)) %>% 
-#   bind_rows() %>% 
-#   select(estimate, p.value)
-# 
-# sim_power_5 =
-#   rerun(5, sim_power(mu = 5)) %>% 
-#   bind_rows() %>% 
-#   select(estimate, p.value)
-# 
-# sim_power_6 =
-#   rerun(5, sim_power(mu = 6)) %>% 
-#   bind_rows() %>% 
-#   select(estimate, p.value)
-# 
-
-```
+When including only values of estimated mu's (mu "hats") that are statistically significant (p value < 0.05), estimates of mu from a sample of 5000 are higher than the true value of mu, but only for true mu values of 1, 2, and 3.  This difference seems to disappear at mu's of >4, because at those effect sizes, the majority of p values are statistically significant.  For an effect size of zero (mu = 0), the average estimated mu is less than the true mu
 
