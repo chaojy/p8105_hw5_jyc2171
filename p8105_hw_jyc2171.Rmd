@@ -459,5 +459,5 @@ As mu (or the effect size) increases, the proportion of statistically significan
 
 When including all values of estimated mu's (aka mu "hat") without accounting for statistical significance, estimates of mu from a sample of 5000 are approximately equal to the true value of mu.
 
-When including only values of estimated mu's (mu "hats") that are statistically significant (p value < 0.05), estimates of mu from a sample of 5000 are higher than the true value of mu, but only for true mu values of 1, 2, and 3.  This difference seems to disappear at mu's of >4, because at those effect sizes, the majority of p values are statistically significant.  For an effect size of zero (mu = 0), the average estimated mu is less than the true mu
+When including only values of estimated mu's (mu "hats") that are statistically significant (p value < 0.05), estimates of mu from a sample of 5000 are higher than the true value of mu, but only for true mu values of 1, 2, and 3.  This difference seems to disappear at mu's of >4, because at those effect sizes, the majority of p values are statistically significant.  For an effect size of zero (mu = 0), the average estimated mu has a median value that seems to be less than the true mu, but with a wide interquartile range.
 
